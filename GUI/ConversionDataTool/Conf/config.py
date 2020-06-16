@@ -18,7 +18,7 @@ class Config():
                 Congfig实例
                 The Singleton Class to Control Configurations
             Example:
-                from RiskReport.Config import Config
+                from ConversionDataTool.Config import Config
                 config = Config()
                 config.cfg.getint('DST_or_GMT','DST')
         """

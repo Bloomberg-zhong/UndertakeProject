@@ -9,6 +9,7 @@
 import sys
 import pandas as pd
 import numpy as np
+from GUI.ConversionDataTool.utils import *
 from PyQt5.QtWidgets import *
 # from PyQt5.QtWidgets import QApplication, QMainWindow,QFileDialog,QTableWidgetItem
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -26,24 +27,47 @@ class MainWindow(QMainWindow, Ui_MainWindow,):
 
         self.setupUi(self)
         # 打开文件功能
+        # self.init_output_filepath
         self.ChooseFileButon.clicked.connect(self.openfile)
         self.ChooseFileButon.clicked.connect(self.creat_table_show)
-        self.FreshDataButton.clicked.connect(self.refrashdisplay)
+        self.FreshDataButton.clicked.connect(self.refresh_display)
+        self.OutputFilsePathButton.clicked.connect(self.save_output_filepath)
 
-    def refrashdisplay(self):
-        #利用line Edit控件对象text()函数获取界面输入
+    def init_output_filepath(self):
+        # 初始化登录信息
+        # settings = QSettings("config.ini", QSettings.IniFormat)  # 方法1：使用配置文件
+        settings = QSettings("mysoft","myapp")                        #方法2：使用注册表
+        self.output_path = settings.value("outputfilepath")
+        if self.output_path is None:
+            self.output_path = GetDesktopPath()
+        print(self.output_path)
 
+    def refresh_display(self):
+        # 重新数据界面并进行调整
         if hasattr(self,'path_openfile_name'):
             if len(path_openfile_name) > 0:
                 print(self.path_openfile_name)
                 self.ExcelFilesState.setText('{:<10}'.format(self.path_openfile_name))
-
         else:
             print('Not choose File!')
             self.ExcelFilesState.setText('{:<10}'.format(u'没有选择文件'))
             self.openfile()
             self.creat_table_show()
 
+    def save_output_filepath(self):
+        output_filepath = QFileDialog.getExistingDirectory(self,"选取文件夹","./")
+        # settings = QSettings("config.ini", QSettings.IniFormat)  # 方法1：使用配置文件
+        settings = QSettings("mysoft", "myapp")  # 方法2：使用注册表
+        settings.setValue("outputfilepath", output_filepath)
+        self.init_output_filepath()
+
+    def save_email_setting(self):
+        # settings = QSettings("config.ini", QSettings.IniFormat)
+        settings = QSettings("mysoft", "myapp")
+        settings.setValue("outputfilepath", self.lineEdit_account.text())
+        settings.setValue("password", self.lineEdit_password.text())
+        settings.setValue("remeberpassword", self.checkBox_remeberpassword.isChecked())
+        settings.setValue("autologin", self.checkBox_autologin.isChecked())
 
     def openfile(self):
 
