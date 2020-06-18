@@ -18,7 +18,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from GUI.ConversionDataTool.MainWindow import Ui_MainWindow
 from GUI.ConversionDataTool.GeneralSender import Sender_Dialog
-
+from GUI.ConversionDataTool.Data import ReportGeneraler
 class MainWindow(QMainWindow, Ui_MainWindow,):
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
@@ -28,10 +28,15 @@ class MainWindow(QMainWindow, Ui_MainWindow,):
         self.setupUi(self)
         # 打开文件功能
         # self.init_output_filepath
+        self.init_output_filepath()
         self.ChooseFileButon.clicked.connect(self.openfile)
         self.ChooseFileButon.clicked.connect(self.creat_table_show)
         self.FreshDataButton.clicked.connect(self.refresh_display)
         self.OutputFilsePathButton.clicked.connect(self.save_output_filepath)
+        self.DailyDataButton.clicked.connect(self.save_output_daily_file)
+        self.WeeklyDataButton.clicked.connect(self.save_output_weekly_file)
+        self.MonthDataButton.clicked.connect(self.save_output_month_file)
+
 
     def init_output_filepath(self):
         # 初始化登录信息
@@ -47,10 +52,10 @@ class MainWindow(QMainWindow, Ui_MainWindow,):
         if hasattr(self,'path_openfile_name'):
             if len(path_openfile_name) > 0:
                 print(self.path_openfile_name)
-                self.ExcelFilesState.setText('{:<10}'.format(self.path_openfile_name))
+                self.ExcelFilesState.setText('{:<40}'.format(self.path_openfile_name))
         else:
             print('Not choose File!')
-            self.ExcelFilesState.setText('{:<10}'.format(u'没有选择文件'))
+            self.ExcelFilesState.setText('{:<40}'.format(u'没有选择文件'))
             self.openfile()
             self.creat_table_show()
 
@@ -68,6 +73,56 @@ class MainWindow(QMainWindow, Ui_MainWindow,):
         settings.setValue("password", self.lineEdit_password.text())
         settings.setValue("remeberpassword", self.checkBox_remeberpassword.isChecked())
         settings.setValue("autologin", self.checkBox_autologin.isChecked())
+
+    def save_output_daily_file(self,):
+        self.init_output_filepath()
+        if hasattr(self,'path_openfile_name'):
+            RG = ReportGeneraler(input_file_path=self.path_openfile_name)
+            RG.file_path_check(output_file_path = self.output_path)
+            file_check = RG.input_file_check()
+            if file_check is not True:
+                self.ExcelFilesState.setText('{:<40}'.format(file_check))
+            File_data = RG.input_data_check()
+            if File_data is not True :
+                self.ExcelFilesState.setText('{:<40}'.format(File_data))
+            file_save_state = RG.file_data_excel_output(output_type=0)
+            if file_save_state is not True:
+                self.ExcelFilesState.setText('{:<40}'.format(file_save_state))
+        else:
+            self.ExcelFilesState.setText('{:<40}'.format('请选择文件'))
+
+    def save_output_weekly_file(self,):
+        if hasattr(self,'path_openfile_name'):
+            RG = ReportGeneraler(input_file_path=self.path_openfile_name)
+            RG.file_path_check(output_file_path = self.output_path)
+            file_check = RG.input_file_check()
+            if file_check is not True:
+                self.ExcelFilesState.setText('{:<40}'.format(file_check))
+            File_data = RG.input_data_check()
+            if File_data is not True:
+                self.ExcelFilesState.setText('{:<40}'.format(File_data))
+            file_save_state=RG.file_data_excel_output(output_type=1)
+            if file_save_state is not True:
+                self.ExcelFilesState.setText('{:<40}'.format(file_save_state))
+        else:
+            self.ExcelFilesState.setText('{:<40}'.format('请选择文件'))
+
+    def save_output_month_file(self,):
+        if hasattr(self,'path_openfile_name'):
+            RG = ReportGeneraler(input_file_path=self.path_openfile_name)
+            RG.file_path_check(output_file_path = self.output_path)
+            file_check = RG.input_file_check()
+            if file_check is not True :
+                self.ExcelFilesState.setText('{:<40}'.format(file_check))
+            File_data = RG.input_data_check()
+            if File_data is not True:
+                self.ExcelFilesState.setText('{:<40}'.format(File_data))
+            file_save_state=RG.file_data_excel_output(output_type=2)
+            if file_save_state is not True :
+                self.ExcelFilesState.setText('{:<40}'.format(file_save_state))
+        else:
+            self.ExcelFilesState.setText('{:<40}'.format('请选择文件'))
+
 
     def openfile(self):
 
@@ -87,7 +142,18 @@ class MainWindow(QMainWindow, Ui_MainWindow,):
         self.ExcelFilesState.setText('{:<40}'.format(path_openfile_name))
         ###===========读取表格，转换表格，===========================================
         if len(path_openfile_name) > 0:
-            input_table = pd.read_excel(path_openfile_name,sheet_name=1)
+            RG = ReportGeneraler(input_file_path=path_openfile_name)
+            file_check = RG.input_file_check()
+            print(file_check)
+            if file_check is not True:
+                self.ExcelFilesState.setText('{:<40}'.format(file_check))
+                print(1)
+                return
+            else:
+                input_table = RG.file_data_adj()
+                self.ExcelFilesState.setText('{:<40}'.format('成功打开文件'))
+
+
         #print(input_table)
             input_table_rows = input_table.shape[0]
             input_table_colunms = input_table.shape[1]
