@@ -113,6 +113,7 @@ class Ui_MainWindow(object):
         self.formLayout.setWidget(13, QtWidgets.QFormLayout.LabelRole, self.label_11)
         self.SendMailPassWord = QtWidgets.QLineEdit(self.formLayoutWidget)
         self.SendMailPassWord.setObjectName("SendMailPassWord")
+
         self.formLayout.setWidget(13, QtWidgets.QFormLayout.FieldRole, self.SendMailPassWord)
         self.label_9 = QtWidgets.QLabel(self.formLayoutWidget)
         self.label_9.setObjectName("label_9")
@@ -204,5 +205,8 @@ class Ui_MainWindow(object):
         self.EncryptionButton.setItemText(1, _translate("MainWindow", "SSL/TLS"))
         self.EncryptionButton.setItemText(2, _translate("MainWindow", "STARTTLS"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.MailSet), _translate("MainWindow", "邮箱设定"))
+        self.EmailPassWord.setEchoMode(QtWidgets.QLineEdit.Password)
+        self.SendMailPassWord.setEchoMode(QtWidgets.QLineEdit.Password)
+
 
 

@@ -7,7 +7,8 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-
+from PyQt5.QtCore import QDate
+from GUI.ConversionDataTool.utils import SeasonDict,to_date
 
 class Sender_Dialog(object):
     def setupUi(self, Dialog):
@@ -24,12 +25,18 @@ class Sender_Dialog(object):
         self.horizontalLayout.addWidget(self.label)
         self.StartDate = QtWidgets.QDateEdit(Dialog)
         self.StartDate.setObjectName("StartDate")
+        # 设置开始时间
+        self.StartDate.setDate(QDate(to_date(SeasonDict()['week'][0])))
+        self.StartDate.setDisplayFormat("yyyy-MM-dd")
         self.horizontalLayout.addWidget(self.StartDate)
         self.label_2 = QtWidgets.QLabel(Dialog)
         self.label_2.setObjectName("label_2")
         self.horizontalLayout.addWidget(self.label_2)
         self.EndDate = QtWidgets.QDateEdit(Dialog)
         self.EndDate.setObjectName("EndDate")
+        # 设置结束时间
+        self.EndDate.setDate(QtCore.QDate.currentDate())
+        self.EndDate.setDisplayFormat("yyyy-MM-dd")
         self.horizontalLayout.addWidget(self.EndDate)
         self.SendDatatype = QtWidgets.QComboBox(Dialog)
         self.SendDatatype.setObjectName("SendDatatype")
