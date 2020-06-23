@@ -10,10 +10,8 @@ import sys
 import pandas as pd
 import numpy as np
 from GUI.ConversionDataTool.utils import *
-from PyQt5.QtWidgets import *
 # from PyQt5.QtWidgets import QApplication, QMainWindow,QFileDialog,QTableWidgetItem
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from GUI.ConversionDataTool.MainWindow import Ui_MainWindow
@@ -27,7 +25,8 @@ class MainWindow(QMainWindow, Ui_MainWindow,):
 
         # GeneralSenderWindows
         self.setupUi(self)
-        # 打开文件功能
+        # 邮件发送子窗口
+
         self._debug = _debug
         self.init_output_filepath()
         self.init_email_sender()
@@ -39,6 +38,7 @@ class MainWindow(QMainWindow, Ui_MainWindow,):
         self.DailyDataButton.clicked.connect(self.save_output_daily_file)
         self.WeeklyDataButton.clicked.connect(self.save_output_weekly_file)
         self.MonthDataButton.clicked.connect(self.save_output_month_file)
+        self.SendMail.clicked.connect(self.openDialog)
 
     def init_output_filepath(self):
         # 初始化登录信息
@@ -285,19 +285,158 @@ class MainWindow(QMainWindow, Ui_MainWindow,):
             self.centralwidget.show()
 
 
-class GeneralSenderWindows(Sender_Dialog, QDialog):
-    def __init__(self, parent=None):
-        super(Sender_Dialog, self).__init__(parent)
+
+    def openDialog(self):
+        self.refresh_display()
+        GeneralSenderWindowslog = GeneralSenderWindows(self,path_openfile_name=self.path_openfile_name,
+                                                       output_path = self.output_path
+                                                       )
+        # 连接【子窗口内置消息和主窗口的槽函数】
+        GeneralSenderWindowslog.GeneralDailySendlistButton.clicked.connect(self.mail_add_check)
+        GeneralSenderWindowslog.show()
+
+    def mail_add_check(self):
+        pass
+
+
+
+class GeneralSenderWindows(QDialog,Sender_Dialog):
+    dialogSignel = pyqtSignal(int, str)
+
+    def __init__(self,parent=None,**kwargs):
+        super(GeneralSenderWindows, self).__init__(parent)
+        self.path_openfile_name = kwargs.get('path_openfile_name', None)
+        self.output_path = kwargs.get('output_path', None)
+
         self.setupUi(self)
+        self.retranslateUi(self)
+        self.GeneralDailySendlistButton.clicked.connect(self.general_daily_send_report)
+        self.GeneralWeeklySendlistButton.clicked.connect(self.general_weekly_send_report)
+        self.GeneralMonthSendlistButton.clicked.connect(self.general_month_send_report)
+        self.GeneralSendlistButton.clicked.connect(self.general_custom_send_report)
+
+
 
     def general_daily_send_report(self):
-        pass
+        SD = SeasonDict()
+        RG = ReportGeneraler(input_file_path=self.path_openfile_name)
+        RG.file_path_check(output_file_path = self.output_path)
+        SendMail_Info_Path,Send_df_state = RG.send_file_table_output(
+            StartDate=SD['date'],
+            EndDate=SD['date'],
+            output_type=0,
+            if_mail=True
+        )
+
+        if Send_df_state:
+            self.creat_table_show(file_path=SendMail_Info_Path)
+        else:
+            self.tempSendTable.show()
+
 
     def general_weekly_send_report(self):
-        pass
+        SD = SeasonDict()
+        RG = ReportGeneraler(input_file_path=self.path_openfile_name)
+        RG.file_path_check(output_file_path = self.output_path)
+        SendMail_Info_Path,Send_df_state = RG.send_file_table_output(
+            StartDate=SD['week'],
+            EndDate=SD['week'],
+            output_type=1,
+            if_mail=True
+        )
+
+        if Send_df_state:
+            self.creat_table_show(file_path=SendMail_Info_Path)
+        else:
+            self.tempSendTable.show()
+
 
     def general_month_send_report(self):
-        pass
+        SD = SeasonDict()
+        RG = ReportGeneraler(input_file_path=self.path_openfile_name)
+        RG.file_path_check(output_file_path=self.output_path)
+        SendMail_Info_Path, Send_df_state = RG.send_file_table_output(
+            StartDate=SD['month'],
+            EndDate=SD['month'],
+            output_type=2,
+            if_mail=True
+        )
+
+        if Send_df_state:
+            self.creat_table_show(file_path=SendMail_Info_Path)
+        else:
+            self.tempSendTable.show()
+
+    def general_custom_send_report(self):
+        RG = ReportGeneraler(input_file_path=self.path_openfile_name)
+        RG.file_path_check(output_file_path=self.output_path)
+
+        print(self.SendDatatype.currentText())
+        _temp_sendtype = self.SendDatatype.currentText()
+        sendtype_dict = {
+            "日":0,
+            "周":1,
+            "月":2
+        }
+
+        SendMail_Info_Path, Send_df_state = RG.send_file_table_output(
+            StartDate=self.StartDate.text(),
+            EndDate=self.EndDate.text(),
+            output_type=sendtype_dict[_temp_sendtype],
+            if_mail=True
+        )
+
+        if Send_df_state:
+            self.creat_table_show(file_path=SendMail_Info_Path)
+        else:
+            self.tempSendTable.show()
+
+
+    def creat_table_show(self,file_path):
+        # ===========读取表格，转换表格，===========================================
+        input_table = pd.read_excel(file_path,index_col=0)
+
+    # print(input_table)
+        input_table_rows = input_table.shape[0]
+        input_table_colunms = input_table.shape[1]
+    # print(input_table_rows)
+    # print(input_table_colunms)
+        input_table_header = input_table.columns.values.tolist()
+    # print(input_table_header)
+
+    # ===========读取表格，转换表格，============================================
+    # ======================给tablewidget设置行列表头============================
+
+        self.tempSendTable.setColumnCount(input_table_colunms)
+        self.tempSendTable.setRowCount(input_table_rows)
+        self.tempSendTable.setHorizontalHeaderLabels(input_table_header)
+
+    # ======================给tablewidget设置行列表头============================
+
+    # ================遍历表格每个元素，同时添加到tablewidget中========================
+        for i in range(input_table_rows):
+            input_table_rows_values = input_table.iloc[[i]]
+            # print(input_table_rows_values)
+            input_table_rows_values_array = np.array(
+                input_table_rows_values)
+            input_table_rows_values_list = input_table_rows_values_array.tolist()[
+                0]
+        # print(input_table_rows_values_list)
+            for j in range(input_table_colunms):
+                input_table_items_list = input_table_rows_values_list[j]
+            # print(input_table_items_list)
+            # print(type(input_table_items_list))
+
+    # ==============将遍历的元素添加到tablewidget中并显示=======================
+
+                input_table_items = str(input_table_items_list)
+                newItem = QTableWidgetItem(input_table_items)
+                # newItem.setTextAlignment(Qt.AlignHCenter|Qt.AlignVCenter)
+                self.tempSendTable.setItem(i, j, newItem)
+
+    # ================遍历表格每个元素，同时添加到tablewidget中========================
+
+
 
 
 
@@ -308,8 +447,8 @@ if __name__ == '__main__':
     filesender = GeneralSenderWindows()
 
     # 通过toolButton将两个窗体关联
-    btn = widgets.SendMail
-    btn.clicked.connect(filesender.show)
+    # btn = widgets.SendMail
+    # btn.clicked.connect(filesender.show)
     # 显示
     widgets.show()
     sys.exit(app.exec_())

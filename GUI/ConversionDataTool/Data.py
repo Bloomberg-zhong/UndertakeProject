@@ -35,10 +35,10 @@ class ReportGeneraler():
         self.dailylog_path = path.join(output_file_path, u'日数据')
         self.weeklylog_path = path.join(output_file_path, u'周数据')
         self.monthlog_path = path.join(output_file_path, u'月数据')
-        mkdir(self.mailsendlog_path)
-        mkdir(self.dailylog_path)
-        mkdir(self.weeklylog_path)
-        mkdir(self.monthlog_path)
+        mkdir(self.mailsendlog_path,_debug=self._debug)
+        mkdir(self.dailylog_path,_debug=self._debug)
+        mkdir(self.weeklylog_path,_debug=self._debug)
+        mkdir(self.monthlog_path,_debug=self._debug)
 
     def input_file_check(self):
 
@@ -86,9 +86,10 @@ class ReportGeneraler():
         return True
 
     def input_data_check(self):
-        users_df = pd.read_excel(self.input_file_path, sheet_name=0)
-        origin_df = pd.read_excel(self.input_file_path, sheet_name=1)
+
         try:
+            users_df = pd.read_excel(self.input_file_path, sheet_name=0)
+            origin_df = pd.read_excel(self.input_file_path, sheet_name=1)
             _temp_user_df = origin_df[~origin_df['客户名称'].isin(
                 users_df['客户名称'])]
             not_excent_users = _temp_user_df['客户名称'].unique().tolist()
@@ -136,7 +137,7 @@ class ReportGeneraler():
         self.finis_adj_input_df = origin_df
         return origin_df
 
-    def file_data_excel_output(self, output_type=0, if_mail=False):
+    def file_data_excel_output(self,output_type=0, if_mail=False,**kwargs):
         """
             Desc:
                 深圳按照规则产生的数据报告
@@ -173,7 +174,7 @@ class ReportGeneraler():
             '合计',
             '返佣费',
             '备注',
-            ]
+        ]
         if if_mail:
             OUTPUTCOLUMNS.remove('返佣费')
 
@@ -182,6 +183,10 @@ class ReportGeneraler():
             input_df_adj = self.file_data_adj()
             if if_mail:
                 self.input_data_check()
+                StartDate = kwargs.get('StartDate', None)
+                EndDate = kwargs.get('EndDate', None)
+                input_df_adj = input_df_adj[(input_df_adj['订单时间'] >= StartDate) & (
+                        input_df_adj['订单时间'] <= EndDate)].reset_index(drop=True)
 
             users_name_list = input_df_adj['客户名称'].unique().tolist()
 
@@ -210,7 +215,7 @@ class ReportGeneraler():
                     lambda x: get_week_and_month(date_str=x, type=0)).astype('str')
                 datetime_list = input_df_adj['归属月'].unique().tolist()
                 if if_mail:
-                    temp_path = path.join(self.mailsendlog_path, u'周数据')
+                    temp_path = path.join(self.mailsendlog_path, u'月数据')
                 else:
                     temp_path = self.monthlog_path
 
@@ -255,10 +260,12 @@ class ReportGeneraler():
 
                     _temp_file_name = datetime_list[i] + '客户--' + users_name_list[j] + '.xlsx'
                     _temp_output_file_path = path.join(_temp_file_path, _temp_file_name)
-
-                    Users_send_file_path.append([datetime_list[i],users_name_list[j],_temp_file_name,_temp_output_file_path])
+                    Users_send_file_path.append(
+                        [datetime_list[i], users_name_list[j], _temp_file_name, _temp_output_file_path])
                     output_file.to_excel(_temp_output_file_path, index=True)
-            OUTPUT_File = pd.DataFrame(Users_send_file_path, columns=['Date','客户名称','文件名','文件路径'])
+            OUTPUT_File = pd.DataFrame(
+                Users_send_file_path, columns=[
+                    'Date', '客户名称', '文件名', '文件路径'])
 
         except BaseException:
             return '发生未知错误'
@@ -268,7 +275,7 @@ class ReportGeneraler():
 
         return True
 
-    def send_file_table_outpu(self,
+    def send_file_table_output(self,
                               StartDate,
                               EndDate,
                               output_type=0,
@@ -280,18 +287,43 @@ class ReportGeneraler():
         """
         self.input_data_check()
         users_df = pd.read_excel(self.input_file_path, sheet_name=0)
+        try:
+        #  清理所有历史文件
+            clear_file(filepath=path.join(self.mailsendlog_path, u'日数据'),_debug=self._debug)
+            clear_file(filepath=path.join(self.mailsendlog_path, u'周数据'),_debug=self._debug)
+            clear_file(filepath=path.join(self.mailsendlog_path, u'月数据'),_debug=self._debug)
 
-        clear_file(filepath=self.mailsendlog_path)
-        out_put_file_path = self.file_data_excel_output(output_type=output_type, if_mail=if_mail)
-        USER_COLUMNS = ['客户名称', '客户公司名称', '客户邮箱地址', '发送日报', '发送周报', '发送月报']
-        Users_df_info = users_df[USER_COLUMNS]
-        out_put_df = pd.merge(left=out_put_file_path,right=Users_df_info,how='left',left_on=['客户名称'],right_on=['客户名称'])
-        # 数据调整
-        output_df_adj = out_put_df[(out_put_df['Date']>=StartDate) & (out_put_df['Date']<=EndDate)].reset_index(drop=True)
+            out_put_file_path = self.file_data_excel_output(
+                StartDate=StartDate,
+                EndDate = EndDate,
+                output_type=output_type,
+                if_mail=if_mail
+            )
+            USER_COLUMNS = ['客户名称', '客户公司名称', '客户邮箱地址', '发送日报', '发送周报', '发送月报']
 
+            Users_df_info = users_df[USER_COLUMNS]
+            out_put_df = pd.merge(
+                left=out_put_file_path,
+                right=Users_df_info,
+                how='left',
+                left_on=['客户名称'],
+                right_on=['客户名称'])
+            # 数据调整
+            # output_df_adj = out_put_df[(out_put_df['Date'] >= StartDate) & (
+            #     out_put_df['Date'] <= EndDate)].reset_index(drop=True)
 
-        return output_df_adj
+            output_df_adj = out_put_df
+            now_date = to_date_str(dt.datetime.now())
+            now_date = now_date + '-发送邮件列表.xlsx'
+            out_put_file= path.join(
+                self.mailsendlog_path,
+                now_date
+            )
+            output_df_adj.to_excel(out_put_file)
 
+            return out_put_file,True
+        except BaseException:
+            return "发送数据列表发生异常" ,False
 
 
 if __name__ == '__main__':

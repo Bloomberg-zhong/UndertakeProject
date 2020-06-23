@@ -60,7 +60,7 @@ class Sender_Dialog(object):
         self.GeneralMonthSendlistButton.setObjectName("GeneralMonthSendlistButton")
         self.verticalLayout.addWidget(self.GeneralMonthSendlistButton)
         self.gridLayout.addLayout(self.verticalLayout, 0, 1, 1, 1)
-        self.tempSendTable = QtWidgets.QTableView(Dialog)
+        self.tempSendTable = QtWidgets.QTableWidget()
         self.tempSendTable.setObjectName("tempSendTable")
         self.gridLayout.addWidget(self.tempSendTable, 1, 0, 1, 2)
         self.SendState = QtWidgets.QTextBrowser(Dialog)
