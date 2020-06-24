@@ -76,14 +76,14 @@ def EmailSender(
     """
     # 此处废用
     config_dict = init_email_sender()
-    MUST_RECEIVE = '136303452@qq.com'
+    # MUST_RECEIVE = '136303452@qq.com'
 
     #
     if receiver is None:
         receiver = []
 
-    if MUST_RECEIVE not in receiver:
-        receiver.append(MUST_RECEIVE)
+    # if MUST_RECEIVE not in receiver:
+    #     receiver.append(MUST_RECEIVE)
 
     try:
         message['Subject']
@@ -165,7 +165,6 @@ def _html_anchor(define, string=None):
 
 def Email(file_path,
           filename,
-          send_type=None,
           receiver=[]
           ):
     input_df = pd.read_excel(file_path, index_col=0)
@@ -255,5 +254,5 @@ def Email(file_path,
     )
 
 if __name__ == '__main__':
-    E = Email(filename='2020-04-01客户--中山鸿安.xlsx',
-              file_path='/Users/zhongpengbo/Desktop/邮件发送日期日志/日数据/2020-04-01/2020-04-01客户--中山鸿安.xlsx')
+    pass
+

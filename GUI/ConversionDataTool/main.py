@@ -17,6 +17,7 @@ from PyQt5.QtCore import *
 from GUI.ConversionDataTool.MainWindow import Ui_MainWindow
 from GUI.ConversionDataTool.GeneralSender import Sender_Dialog
 from GUI.ConversionDataTool.Data import ReportGeneraler
+from GUI.ConversionDataTool.emailsender import Email
 
 
 class MainWindow(QMainWindow, Ui_MainWindow,):
@@ -39,6 +40,7 @@ class MainWindow(QMainWindow, Ui_MainWindow,):
         self.WeeklyDataButton.clicked.connect(self.save_output_weekly_file)
         self.MonthDataButton.clicked.connect(self.save_output_month_file)
         self.SendMail.clicked.connect(self.openDialog)
+
 
     def init_output_filepath(self):
         # 初始化登录信息
@@ -314,8 +316,7 @@ class GeneralSenderWindows(QDialog,Sender_Dialog):
         self.GeneralWeeklySendlistButton.clicked.connect(self.general_weekly_send_report)
         self.GeneralMonthSendlistButton.clicked.connect(self.general_month_send_report)
         self.GeneralSendlistButton.clicked.connect(self.general_custom_send_report)
-
-
+        self.StartSendButton.clicked.connect(self.Stat_sende_mail_Button)
 
     def general_daily_send_report(self):
         SD = SeasonDict()
@@ -327,6 +328,8 @@ class GeneralSenderWindows(QDialog,Sender_Dialog):
             output_type=0,
             if_mail=True
         )
+        self.SendMailPath_Info = SendMail_Info_Path
+        self.SendMail_Info_state = Send_df_state
 
         if Send_df_state:
             self.creat_table_show(file_path=SendMail_Info_Path)
@@ -344,6 +347,8 @@ class GeneralSenderWindows(QDialog,Sender_Dialog):
             output_type=1,
             if_mail=True
         )
+        self.SendMailPath_Info = SendMail_Info_Path
+        self.SendMail_Info_state = Send_df_state
 
         if Send_df_state:
             self.creat_table_show(file_path=SendMail_Info_Path)
@@ -361,6 +366,9 @@ class GeneralSenderWindows(QDialog,Sender_Dialog):
             output_type=2,
             if_mail=True
         )
+
+        self.SendMailPath_Info = SendMail_Info_Path
+        self.SendMail_Info_state = Send_df_state
 
         if Send_df_state:
             self.creat_table_show(file_path=SendMail_Info_Path)
@@ -386,10 +394,48 @@ class GeneralSenderWindows(QDialog,Sender_Dialog):
             if_mail=True
         )
 
+        self.SendMailPath_Info = SendMail_Info_Path
+        self.SendMail_Info_state = Send_df_state
+
         if Send_df_state:
             self.creat_table_show(file_path=SendMail_Info_Path)
         else:
             self.tempSendTable.show()
+
+    def Stat_sende_mail_Button(self):
+        if (not hasattr(self,'SendMail_Info_state')) | (self.SendMail_Info_state is False):
+            return self.SendState.append('请先生成报告！！！')
+
+        _temp_send_file = pd.read_excel(self.SendMailPath_Info,index_col=0)
+
+        self.SendState.append('开始进行邮件发送')
+        send_sate_total =0
+        send_sate_num = 0
+        send_sate_lost = 0
+        for ix, _data in _temp_send_file.iterrows():
+            __message_text = str(dt.datetime.now()) + '： 发送邮件：' + _data['客户名称'] +'\n 文件位置：' + _data['文件路径']
+            self.SendState.append(__message_text)
+            send_sate_total +=1
+            try:
+                Email(
+                    receiver=[_data['客户邮箱地址']],
+                    filename=_data['文件名'],
+                    file_path=_data['文件路径']
+                )
+                send_sate_num += 1
+                __message_state = str(dt.datetime.now()) + '： 发送邮件：' + _data['客户名称'] + '  发送成功'
+                self.SendState.append(__message_state)
+            except:
+                __message_state = str(dt.datetime.now()) + '： 发送邮件：' + _data['客户名称'] + '  发送失败'
+                self.SendState.append(__message_state)
+                send_sate_lost +=1
+
+
+
+
+        self.SendState.append('发送任务已完成,总共:{}条邮件，成功发送:{}条,发送失败:{}条'.format(send_sate_total,send_sate_num,send_sate_lost))
+
+
 
 
     def creat_table_show(self,file_path):
