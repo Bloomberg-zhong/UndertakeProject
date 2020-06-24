@@ -177,7 +177,10 @@ def Email(file_path,
         '柜号',
         '订舱号',
         '报关单号',
-        '报关费',
+    ]
+    input_df[COLUMNS] = input_df[COLUMNS].astype('str')
+
+    COLUMNS_Values = ['报关费',
         '港建费',
         '商检解锁费',
         '快检费',
@@ -189,7 +192,10 @@ def Email(file_path,
         '过磅费',
         '合计']
 
-    Data_adj = input_df[COLUMNS]
+    input_df[COLUMNS_Values] = input_df[COLUMNS_Values].applymap(formater_4decimal)
+    Data_adj = input_df[COLUMNS + COLUMNS_Values]
+    Data_adj = Data_adj.replace('nan', '')
+    Data_adj = Data_adj.replace('NaT', '')
 
     __data_html = Data_adj.to_html(
         index=True,
