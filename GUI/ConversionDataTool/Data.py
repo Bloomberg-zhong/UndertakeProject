@@ -326,6 +326,7 @@ class ReportGeneraler():
             return "发送数据列表发生异常" ,False
 
 
+
 if __name__ == '__main__':
 
     RG = ReportGeneraler(
