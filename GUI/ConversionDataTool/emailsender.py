@@ -7,7 +7,8 @@ Created on Fri Oct 19 19:26:53 2018
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
-from email.mime.image import MIMEImage
+from email.mime.application import MIMEApplication
+
 from email.mime.text import MIMEText
 from PyQt5.QtCore import QSettings
 import poplib
@@ -75,14 +76,14 @@ def EmailSender(
     """
     # 此处废用
     config_dict = init_email_sender()
-    MUST_RECEIVE = ['136303452@qq.com']
+    MUST_RECEIVE = '136303452@qq.com'
 
     #
     if receiver is None:
         receiver = []
 
     if MUST_RECEIVE not in receiver:
-        receiver.extend(MUST_RECEIVE)
+        receiver.append(MUST_RECEIVE)
 
     try:
         message['Subject']
@@ -104,7 +105,7 @@ def EmailSender(
         message['From'] = SENDER
 
     # 已读回执
-    message['Disposition-Notification-To'] = SENDER
+    # message['Disposition-Notification-To'] = SENDER
 
     message['To'] = ', '.join(receiver)
     receivers = receiver + CC
@@ -162,9 +163,9 @@ def _html_anchor(define, string=None):
 # 定时任务出错邮件发送
 
 
-def Email(file_path=None,
+def Email(file_path,
+          filename,
           send_type=None,
-          filename=None,
           receiver=[]
           ):
     input_df = pd.read_excel(file_path, index_col=0)
@@ -176,10 +177,7 @@ def Email(file_path=None,
         '柜号',
         '订舱号',
         '报关单号',
-        ]
-
-    input_df[COLUMNS] = input_df[COLUMNS].astype('str')
-    Values_COLUMNS=['报关费',
+        '报关费',
         '港建费',
         '商检解锁费',
         '快检费',
@@ -190,11 +188,8 @@ def Email(file_path=None,
         '熏蒸费',
         '过磅费',
         '合计']
-    input_df[Values_COLUMNS] =input_df[Values_COLUMNS].applymap(formater_4decimal)
 
-    Data_adj = input_df[COLUMNS + Values_COLUMNS]
-
-    to_date_str(input_df['订单时间'].max())
+    Data_adj = input_df[COLUMNS]
 
     __data_html = Data_adj.to_html(
         index=True,
@@ -202,7 +197,7 @@ def Email(file_path=None,
         justify='center'
 
     )
-    title1 = '订单清算表:'
+    title1 = '您好!贵司委托我司代理报关业务，费用确认单如下：:<br>'
     content = (
         _html_anchor(
             define=title1,
@@ -217,18 +212,17 @@ def Email(file_path=None,
         "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" +
         "1. " +
         "日统计区间为：" +
-        to_date_str(
-                input_df['订单时间'].min()) +
+        to_date_str(Data_adj['订单时间'].min()) +
         " - " +
         to_date_str(
-            input_df['订单时间'].max()) +
+            Data_adj['订单时间'].max()) +
         ";<br>" +
         "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" +
         "2. " +
         "更多详细数据, 可下载附件Excel文件查看;<br>" +
         "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" +
         "3. " +
-        '其它疑问与需求，请联系<a href="mailto:z136303452@hotmail.com">z136303452@hotmail.com</a>;<br>')
+        '其它疑问与需求，请联系<a href="mailto:13902448628@163.com">13902448628@163.com</a>&nbsp;&nbsp;<a>TEL/FAX:25290256</a>;<br>')
 
     message = MIMEMultipart()
     message.attach(
@@ -239,16 +233,10 @@ def Email(file_path=None,
         )
     )
 
-
-    attachment = MIMEBase('application', "octet-stream")
-
-    attachment.set_payload(open(file_path, "rb").read())
-    encoders.encode_base64(attachment)
-    attachment.add_header(
-        'Content-Disposition',
-        'attachment; filename="%s"' %
-        filename)
-    message.attach(attachment)
+    # add attachment
+    part = MIMEApplication(open(file_path,'rb').read())
+    part.add_header('Content-Disposition', 'attachment', filename=filename)
+    message.attach(part)
 
     FILE_SUBJECT = '深圳市新汇华顺通物流有限公司_费用确认单:{}'.format(
         str(dt.datetime.now().date()))
@@ -259,3 +247,7 @@ def Email(file_path=None,
         receiver=receiver,
         anonymity=False
     )
+
+if __name__ == '__main__':
+    E = Email(filename='2020-04-01客户--中山鸿安.xlsx',
+              file_path='/Users/zhongpengbo/Desktop/邮件发送日期日志/日数据/2020-04-01/2020-04-01客户--中山鸿安.xlsx')
